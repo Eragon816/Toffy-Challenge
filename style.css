@@ -76,11 +76,8 @@ body {
   margin-bottom: 40px;
   color: var(--text-color);
 }
-.mode-btn,
-#restart-btn,
-#menu-btn,
-#stop-button,
-#mix-button {
+/* --- CORRECTED: Consolidated Button Styles --- */
+.game-btn {
   padding: 15px 20px;
   font-size: 1.2rem;
   font-family: "Tajawal", sans-serif;
@@ -92,11 +89,7 @@ body {
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
-.mode-btn:hover,
-#restart-btn:hover,
-#menu-btn:hover,
-#stop-button:hover,
-#mix-button:hover {
+.game-btn:hover {
   background-color: var(--main-color);
   color: var(--primary-color);
   transform: translateY(-3px);
@@ -222,7 +215,10 @@ body {
 }
 #feedback-overlay {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   pointer-events: none;
   animation-duration: 0.5s;
 }
@@ -281,7 +277,6 @@ body {
   width: 280px;
   height: 280px;
   position: relative;
-  /* Bouncy transition for the rotation twist */
   transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
 }
 
@@ -295,15 +290,13 @@ body {
 }
 
 .simon-slice.lit {
-  filter: brightness(2.5) contrast(1.2); /* BRIGHT GLOW effect */
+  filter: brightness(2.5) contrast(1.2);
 }
 .correct-answer-highlight {
   filter: brightness(2) contrast(1.2) !important;
   border: 4px solid var(--correct-color);
   box-sizing: border-box;
 }
-
-/* Positioning and shaping each slice using border-radius */
 .slice-0 {
   top: 0;
   left: 0;
@@ -324,10 +317,8 @@ body {
   right: 0;
   border-bottom-right-radius: 140px;
 }
-
-/* Dynamic background colors will be set by JS */
 .simon-slice:not(.lit):active {
-  filter: brightness(0.8); /* Press-down effect */
+  filter: brightness(0.8);
 }
 
 @keyframes assemble-wheel {
@@ -340,8 +331,6 @@ body {
     opacity: 1;
   }
 }
-
-/* --- END Simon Wheel Styles --- */
 
 /* --- Stop the Bar --- */
 #stop-the-bar-container {
@@ -387,6 +376,7 @@ body {
     left: calc(100% - 10px);
   }
 }
+/* This button now uses .game-btn class */
 #stop-button {
   width: 150px;
   font-size: 1.5rem;
@@ -406,7 +396,7 @@ body {
   border-radius: 50%;
   box-shadow: 0 0 15px var(--main-color-alt), 0 0 25px var(--main-color);
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, transform 0.2s; /* Added transform for hover effect */
   animation: shrink-and-fade linear forwards;
 }
 .click-target:hover {
@@ -580,4 +570,9 @@ body {
   cursor: pointer;
   border-radius: 50%;
   border: 3px solid var(--bg-color);
+}
+
+/* This button now uses .game-btn */
+#mix-button {
+  margin-top: 10px; /* Added some margin for spacing */
 }

@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // ... (All code up to the puzzle generators is unchanged from the previous corrected version) ...
   const screens = {
     start: document.getElementById("start-screen"),
     game: document.getElementById("game-screen"),
@@ -83,6 +82,10 @@ document.addEventListener("DOMContentLoaded", () => {
     state.isPlayerTurn = false;
     state.levelInProgress = true;
     ui.puzzleArea.innerHTML = "";
+    // Re-add game-btn class to dynamically created buttons
+    ui.puzzleArea
+      .querySelectorAll("button")
+      .forEach((btn) => btn.classList.add("game-btn"));
     ui.puzzleArea.className = "";
     ui.puzzleArea.style.cursor = "default";
     ui.level.textContent = state.currentLevel;
@@ -124,8 +127,8 @@ document.addEventListener("DOMContentLoaded", () => {
     playFeedback(true);
     setTimeout(loadLevel, 800);
   }
+  // --- BUG FIX: Removed faulty guard clause that prevented game over screen on loss ---
   function endGame(isWin) {
-    if (!state.levelInProgress && !isWin) return;
     state.levelInProgress = false;
     clearInterval(state.timer);
     if (state.score > state.highScore) {
@@ -183,7 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   function updateLivesDisplay() {
     ui.livesContainer.style.display =
-      state.gameMode === "arcade" ? "block" : "none";
+      state.gameMode === "arcade" ? "flex" : "none"; // Use flex to match HUD styles
     const { head, torso, legLeft, legRight } = ui.character;
     Object.values(ui.character).forEach((part) =>
       part.classList.remove("hidden", "fall")
@@ -207,7 +210,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // === PUZZLE GENERATORS START ===
 
-  // --- REBUILT Simon Says LOGIC ---
   function generateSimon() {
     const patternLength = Math.min(10, 3 + Math.floor(state.currentLevel / 2));
     const showPatternSpeed = Math.max(200, 500 - state.currentLevel * 10);
@@ -219,49 +221,56 @@ document.addEventListener("DOMContentLoaded", () => {
       pattern.push(Math.floor(Math.random() * 4));
     }
 
-    // Create the wheel structure
     const wheelContainer = document.createElement("div");
     wheelContainer.className = "simon-wheel-container";
     ui.puzzleArea.appendChild(wheelContainer);
 
-    const colors = ["#e94560", "#1e90ff", "#2ecc71", "#fca311"]; // Red, Blue, Green, Orange
+    const colors = ["#e94560", "#1e90ff", "#2ecc71", "#fca311"];
     for (let i = 0; i < 4; i++) {
       const slice = document.createElement("div");
       slice.className = `simon-slice slice-${i}`;
       slice.style.backgroundColor = colors[i];
-      slice.dataset.index = i; // This is its VISUAL position
-      slice.dataset.colorIndex = i; // This is its TRUE color identity
-      slice.addEventListener("click", handleSimonClick);
-      wheelContainer.appendChild(slice);
-    }
+      slice.dataset.index = i;
+      slice.dataset.colorIndex = i;
 
-    function handleSimonClick(e) {
-      if (!state.isPlayerTurn) return;
-      // We check the TRUE color index, not its current visual position
-      const clickedColorIndex = parseInt(e.target.dataset.colorIndex);
-      playerPattern.push(clickedColorIndex);
+      // --- ACCESSIBILITY ADDED ---
+      slice.setAttribute("role", "button");
+      slice.setAttribute("tabindex", "0");
 
-      // Light up the slice that was clicked
-      const visualIndex = parseInt(e.target.dataset.index);
-      lightUp(visualIndex, 150);
+      const handleSliceActivation = (e) => {
+        e.preventDefault();
+        if (!state.isPlayerTurn) return;
+        const clickedColorIndex = parseInt(e.currentTarget.dataset.colorIndex);
+        playerPattern.push(clickedColorIndex);
 
-      const currentStep = playerPattern.length - 1;
-      if (playerPattern[currentStep] !== pattern[currentStep]) {
-        // Find which slice currently holds the correct color to highlight it
-        for (const slice of wheelContainer.children) {
-          if (parseInt(slice.dataset.colorIndex) === pattern[currentStep]) {
-            state.correctAnswer = parseInt(slice.dataset.index);
-            break;
+        const visualIndex = parseInt(e.currentTarget.dataset.index);
+        lightUp(visualIndex, 150);
+
+        const currentStep = playerPattern.length - 1;
+        if (playerPattern[currentStep] !== pattern[currentStep]) {
+          for (const s of wheelContainer.children) {
+            if (parseInt(s.dataset.colorIndex) === pattern[currentStep]) {
+              state.correctAnswer = parseInt(s.dataset.index);
+              break;
+            }
           }
+          handleIncorrect();
+          return;
         }
-        handleIncorrect();
-        return;
-      }
 
-      if (playerPattern.length === pattern.length) {
-        state.isPlayerTurn = false;
-        nextLevel();
-      }
+        if (playerPattern.length === pattern.length) {
+          state.isPlayerTurn = false;
+          nextLevel();
+        }
+      };
+
+      slice.addEventListener("click", handleSliceActivation);
+      slice.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          handleSliceActivation(e);
+        }
+      });
+      wheelContainer.appendChild(slice);
     }
 
     function lightUp(visualIndex, duration) {
@@ -275,7 +284,6 @@ document.addEventListener("DOMContentLoaded", () => {
     function showPattern(i = 0) {
       if (i < pattern.length) {
         setTimeout(() => {
-          // Find which slice has the color we need to light up
           const colorToFind = pattern[i];
           for (const slice of wheelContainer.children) {
             if (parseInt(slice.dataset.colorIndex) === colorToFind) {
@@ -286,9 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
           showPattern(i + 1);
         }, showPatternSpeed + 100);
       } else {
-        // All pattern shown, now check for the twist!
         if (state.currentLevel > 8) {
-          // Twist starts at level 9
           setTimeout(twistWheel, 500);
         } else {
           state.isPlayerTurn = true;
@@ -301,7 +307,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const randomRotation =
         rotationDegrees[Math.floor(Math.random() * rotationDegrees.length)];
       wheelContainer.style.transform = `rotate(${randomRotation}deg)`;
-
       setTimeout(() => {
         state.isPlayerTurn = true;
       }, 500);
@@ -310,7 +315,6 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => showPattern(), 800);
   }
 
-  // ... (All other puzzle generator functions are unchanged and correct)
   function generateFastClicker() {
     state.isPlayerTurn = true;
     ui.puzzleArea.classList.add("fast-clicker-area");
@@ -411,9 +415,10 @@ document.addEventListener("DOMContentLoaded", () => {
     targets.sort(() => Math.random() - 0.5);
     targets.forEach((t) => spawnTarget(t));
   }
+
   function generateStopTheBar() {
     state.isPlayerTurn = true;
-    ui.puzzleArea.innerHTML = `<div id="stop-the-bar-container"><div class="stb-track"><div class="stb-target-zone"></div><div class="stb-moving-bar"></div></div><button id="stop-button">أوقف!</button></div>`;
+    ui.puzzleArea.innerHTML = `<div id="stop-the-bar-container"><div class="stb-track"><div class="stb-target-zone"></div><div class="stb-moving-bar"></div></div><button id="stop-button" class="game-btn">أوقف!</button></div>`;
     const bar = ui.puzzleArea.querySelector(".stb-moving-bar");
     const stopBtn = document.getElementById("stop-button");
     const speed = Math.max(0.8, 3 - state.currentLevel * 0.07);
@@ -443,6 +448,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
   function generateSequenceLink() {
     state.isPlayerTurn = true;
     ui.puzzleArea.innerHTML = `<div class="sequence-area"><canvas class="sequence-canvas"></canvas></div>`;
@@ -456,6 +462,34 @@ document.addEventListener("DOMContentLoaded", () => {
     const dotSize = 50;
     let currentPoint = 0;
     let lastPoint = null;
+
+    function handleDotActivation(e) {
+      e.preventDefault();
+      const dot = e.currentTarget;
+      if (!state.isPlayerTurn || parseInt(dot.dataset.index) !== currentPoint) {
+        handleIncorrect();
+        return;
+      }
+      dot.classList.add("connected");
+      if (lastPoint) {
+        ctx.beginPath();
+        ctx.moveTo(
+          lastPoint.offsetLeft + dotSize / 2,
+          lastPoint.offsetTop + dotSize / 2
+        );
+        ctx.lineTo(dot.offsetLeft + dotSize / 2, dot.offsetTop + dotSize / 2);
+        ctx.strokeStyle = "var(--main-color-alt)";
+        ctx.lineWidth = 5;
+        ctx.stroke();
+      }
+      lastPoint = dot;
+      currentPoint++;
+      if (currentPoint >= numPoints) {
+        state.isPlayerTurn = false;
+        nextLevel();
+      }
+    }
+
     function spawnPoint(index, isDecoy = false) {
       const dot = document.createElement("div");
       dot.className = isDecoy ? "sequence-dot decoy" : "sequence-dot";
@@ -468,35 +502,12 @@ document.addEventListener("DOMContentLoaded", () => {
         dot.addEventListener("click", handleIncorrect);
       } else {
         dot.dataset.index = index;
-        dot.addEventListener("click", () => {
-          if (
-            !state.isPlayerTurn ||
-            parseInt(dot.dataset.index) !== currentPoint
-          ) {
-            handleIncorrect();
-            return;
-          }
-          dot.classList.add("connected");
-          if (lastPoint) {
-            ctx.beginPath();
-            ctx.moveTo(
-              lastPoint.offsetLeft + dotSize / 2,
-              lastPoint.offsetTop + dotSize / 2
-            );
-            ctx.lineTo(
-              dot.offsetLeft + dotSize / 2,
-              dot.offsetTop + dotSize / 2
-            );
-            ctx.strokeStyle = "var(--main-color-alt)";
-            ctx.lineWidth = 5;
-            ctx.stroke();
-          }
-          lastPoint = dot;
-          currentPoint++;
-          if (currentPoint >= numPoints) {
-            state.isPlayerTurn = false;
-            nextLevel();
-          }
+        // --- ACCESSIBILITY ADDED ---
+        dot.setAttribute("role", "button");
+        dot.setAttribute("tabindex", "0");
+        dot.addEventListener("click", handleDotActivation);
+        dot.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") handleDotActivation(e);
         });
       }
       area.appendChild(dot);
@@ -504,9 +515,10 @@ document.addEventListener("DOMContentLoaded", () => {
     for (let i = 0; i < numPoints; i++) spawnPoint(i);
     for (let i = 0; i < numDecoys; i++) spawnPoint(0, true);
   }
+
   function generateColorBalance() {
     state.isPlayerTurn = true;
-    ui.puzzleArea.innerHTML = `<div class="color-balance-area"><div class="color-swatch target"></div><div class="color-swatch" id="mixed-color"></div><div class="color-mixer"><div class="color-swatch" id="color-a" style="width: 50px; height: 50px;"></div><input type="range" id="color-slider" min="0" max="100" value="50"><div class="color-swatch" id="color-b" style="width: 50px; height: 50px;"></div></div><button id="mix-button">تأكيد</button></div>`;
+    ui.puzzleArea.innerHTML = `<div class="color-balance-area"><div class="color-swatch target"></div><div class="color-swatch" id="mixed-color"></div><div class="color-mixer"><div class="color-swatch" id="color-a" style="width: 50px; height: 50px;"></div><input type="range" id="color-slider" min="0" max="100" value="50"><div class="color-swatch" id="color-b" style="width: 50px; height: 50px;"></div></div><button id="mix-button" class="game-btn">تأكيد</button></div>`;
     const targetSwatch = ui.puzzleArea.querySelector(".target");
     const mixedSwatch = ui.puzzleArea.querySelector("#mixed-color");
     const colorA_Swatch = ui.puzzleArea.querySelector("#color-a");
@@ -520,10 +532,11 @@ document.addEventListener("DOMContentLoaded", () => {
     ];
     const mixRGB = (rgbA, rgbB, ratio) => {
       const iRatio = 1 - ratio;
-      const r = Math.round(rgbA[0] * iRatio + rgbB[0] * ratio);
-      const g = Math.round(rgbA[1] * iRatio + rgbB[1] * ratio);
-      const b = Math.round(rgbA[2] * iRatio + rgbB[2] * ratio);
-      return [r, g, b];
+      return [
+        Math.round(rgbA[0] * iRatio + rgbB[0] * ratio),
+        Math.round(rgbA[1] * iRatio + rgbB[1] * ratio),
+        Math.round(rgbA[2] * iRatio + rgbB[2] * ratio),
+      ];
     };
     const colorA = randomColor();
     const colorB = randomColor();

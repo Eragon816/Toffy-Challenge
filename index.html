@@ -19,10 +19,13 @@
         <h1 class="game-title">T0ffy <span>Challenge</span></h1>
         <p class="game-subtitle">تحدي توفي</p>
         <div class="mode-selection">
-          <button class="mode-btn" data-mode="arcade">
+          <!-- CORRECTED: Added .game-btn class -->
+          <button class="game-btn mode-btn" data-mode="arcade">
             الوضعية الكلاسيكية
           </button>
-          <button class="mode-btn" data-mode="survival">وضعية البقاء</button>
+          <button class="game-btn mode-btn" data-mode="survival">
+            وضعية البقاء
+          </button>
         </div>
         <div class="high-score-container">
           أعلى نتيجة: <span id="high-score">0</span>
@@ -40,7 +43,6 @@
             <span class="label">المستوى</span>
             <span id="level" class="value">1</span>
           </div>
-          <!-- Updated Lives Section -->
           <div id="lives-container" class="hud-item">
             <span class="label">المحاولات</span>
             <div id="character-lives" class="value">
@@ -67,8 +69,9 @@
         <p class="final-score-label">نتيجتك النهائية:</p>
         <p id="final-score" class="final-score-value">0</p>
         <div class="end-buttons">
-          <button id="restart-btn">إعادة اللعب</button>
-          <button id="menu-btn">القائمة الرئيسية</button>
+          <!-- CORRECTED: Added .game-btn class -->
+          <button id="restart-btn" class="game-btn">إعادة اللعب</button>
+          <button id="menu-btn" class="game-btn">القائمة الرئيسية</button>
         </div>
       </div>
     </div>
